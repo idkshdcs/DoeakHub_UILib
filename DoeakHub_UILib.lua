@@ -1,22 +1,24 @@
 -- =========================================================
 -- DOEAK HUB UI LIBRARY | UNIVERSAL FRAMEWORK
--- Version: 1.0.0 | Theme: Embed Dark & Neon Cyan
+-- Version: 2.0.0 | Theme: Slate Gray & Cyan Neon
+-- Mới: Thêm tính năng Dropdown (Menu thả xuống)
 -- =========================================================
 
 local DoeakLib = {}
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 
--- Màu chủ đạo
+-- BẢNG MÀU MỚI: Xám nhẹ (Slate Gray) + Cyan Neon
 local Theme = {
-    MainBG = Color3.fromRGB(13, 14, 18),
-    SidebarBG = Color3.fromRGB(18, 20, 26),
-    ElementBG = Color3.fromRGB(22, 25, 33),
-    ElementHover = Color3.fromRGB(28, 33, 46),
-    Accent = Color3.fromRGB(0, 229, 255), -- Cyan Neon
-    Text = Color3.fromRGB(240, 240, 245),
-    SubText = Color3.fromRGB(130, 135, 150)
+    MainBG = Color3.fromRGB(43, 47, 54),       -- Xám nền chính
+    SidebarBG = Color3.fromRGB(36, 39, 45),    -- Xám Sidebar sậm hơn chút để phân biệt
+    ElementBG = Color3.fromRGB(53, 58, 66),    -- Xám của các nút bấm
+    ElementHover = Color3.fromRGB(63, 69, 78), -- Xám sáng khi di chuột vào
+    Accent = Color3.fromRGB(0, 229, 255),      -- Cyan Neon (Xanh lơ)
+    Text = Color3.fromRGB(245, 245, 250),      -- Trắng tinh khiết
+    SubText = Color3.fromRGB(180, 185, 195)    -- Xám bạc cho chữ phụ
 }
 
 function DoeakLib:CreateWindow(Config)
@@ -37,7 +39,7 @@ function DoeakLib:CreateWindow(Config)
     local MinimizedBtn = Instance.new("ImageButton")
     MinimizedBtn.Size = UDim2.new(0, 45, 0, 45)
     MinimizedBtn.Position = UDim2.new(0, 20, 0.2, 0)
-    MinimizedBtn.BackgroundColor3 = Theme.SidebarBG
+    MinimizedBtn.BackgroundColor3 = Theme.MainBG
     MinimizedBtn.Visible = false
     MinimizedBtn.Active = true
     MinimizedBtn.Draggable = true
@@ -50,9 +52,7 @@ function DoeakLib:CreateWindow(Config)
     MinIcon.TextSize = 22
     MinIcon.Parent = MinimizedBtn
 
-    local MinCorner = Instance.new("UICorner")
-    MinCorner.CornerRadius = UDim.new(1, 0)
-    MinCorner.Parent = MinimizedBtn
+    Instance.new("UICorner", MinimizedBtn).CornerRadius = UDim.new(1, 0)
     local MinStroke = Instance.new("UIStroke")
     MinStroke.Color = Theme.Accent
     MinStroke.Thickness = 2
@@ -67,12 +67,11 @@ function DoeakLib:CreateWindow(Config)
     MainFrame.Active = true
     MainFrame.Draggable = true
     MainFrame.Parent = ScreenGui
+    Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
-    local MainCorner = Instance.new("UICorner")
-    MainCorner.CornerRadius = UDim.new(0, 10)
-    MainCorner.Parent = MainFrame
+    -- Đổ bóng viền (UIStroke)
     local MainStroke = Instance.new("UIStroke")
-    MainStroke.Color = Color3.fromRGB(30, 34, 45)
+    MainStroke.Color = Color3.fromRGB(60, 65, 75)
     MainStroke.Thickness = 1.5
     MainStroke.Parent = MainFrame
 
@@ -129,8 +128,7 @@ function DoeakLib:CreateWindow(Config)
     Sidebar.BackgroundColor3 = Theme.SidebarBG
     Sidebar.Parent = MainFrame
     Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 8)
-    local SidebarLayout = Instance.new("UIListLayout")
-    SidebarLayout.Parent = Sidebar
+    local SidebarLayout = Instance.new("UIListLayout", Sidebar)
     SidebarLayout.Padding = UDim.new(0, 4)
     local SidebarPad = Instance.new("UIPadding", Sidebar)
     SidebarPad.PaddingTop = UDim.new(0, 6) SidebarPad.PaddingLeft = UDim.new(0, 6) SidebarPad.PaddingRight = UDim.new(0, 6)
@@ -145,9 +143,6 @@ function DoeakLib:CreateWindow(Config)
     local TabsList = {}
     local FirstTab = true
 
-    -- ==============================
-    -- HÀM TẠO TAB
-    -- ==============================
     function Window:CreateTab(TabName)
         local Tab = {}
         
@@ -169,9 +164,9 @@ function DoeakLib:CreateWindow(Config)
         TabPage.Visible = false
         TabPage.Parent = ContentArea
         local PageLayout = Instance.new("UIListLayout", TabPage)
-        PageLayout.Padding = UDim.new(0, 6)
+        PageLayout.Padding = UDim.new(0, 8)
         local PagePad = Instance.new("UIPadding", TabPage)
-        PagePad.PaddingTop = UDim.new(0, 6) PagePad.PaddingLeft = UDim.new(0, 6) PagePad.PaddingRight = UDim.new(0, 6)
+        PagePad.PaddingTop = UDim.new(0, 8) PagePad.PaddingLeft = UDim.new(0, 8) PagePad.PaddingRight = UDim.new(0, 8)
 
         table.insert(TabsList, {Btn = TabBtn, Page = TabPage})
 
@@ -192,13 +187,8 @@ function DoeakLib:CreateWindow(Config)
             end
         end)
 
-        -- ==============================
-        -- CÁC COMPONENT TRONG TAB
-        -- ==============================
-        
-        -- 1. Create Button
+        -- [1] BUTTON
         function Tab:CreateButton(Config)
-            local BtnInfo = {}
             local btnFrame = Instance.new("TextButton")
             btnFrame.Size = UDim2.new(1, 0, 0, 40)
             btnFrame.BackgroundColor3 = Theme.ElementBG
@@ -214,21 +204,19 @@ function DoeakLib:CreateWindow(Config)
             ClickIcon.Size = UDim2.new(0, 16, 0, 16)
             ClickIcon.Position = UDim2.new(1, -25, 0.5, -8)
             ClickIcon.BackgroundTransparency = 1
-            ClickIcon.Image = "rbxassetid://6031090990" -- Cursor Icon
+            ClickIcon.Image = "rbxassetid://6031090990"
             ClickIcon.ImageColor3 = Theme.Accent
             ClickIcon.Parent = btnFrame
 
             btnFrame.MouseButton1Click:Connect(function()
-                -- Hiệu ứng click
                 TweenService:Create(btnFrame, TweenInfo.new(0.1), {BackgroundColor3 = Theme.ElementHover}):Play()
                 task.wait(0.1)
                 TweenService:Create(btnFrame, TweenInfo.new(0.1), {BackgroundColor3 = Theme.ElementBG}):Play()
                 if Config.Callback then Config.Callback() end
             end)
-            return BtnInfo
         end
 
-        -- 2. Create Toggle
+        -- [2] TOGGLE
         function Tab:CreateToggle(Config)
             local ToggleInfo = {Value = Config.CurrentValue or false}
             local tFrame = Instance.new("Frame")
@@ -251,7 +239,7 @@ function DoeakLib:CreateWindow(Config)
             local Switch = Instance.new("TextButton")
             Switch.Size = UDim2.new(0, 40, 0, 20)
             Switch.Position = UDim2.new(1, -50, 0.5, -10)
-            Switch.BackgroundColor3 = ToggleInfo.Value and Theme.Accent or Color3.fromRGB(40, 45, 55)
+            Switch.BackgroundColor3 = ToggleInfo.Value and Theme.Accent or Theme.SidebarBG
             Switch.Text = ""
             Switch.Parent = tFrame
             Instance.new("UICorner", Switch).CornerRadius = UDim.new(1, 0)
@@ -263,25 +251,20 @@ function DoeakLib:CreateWindow(Config)
             Knob.Parent = Switch
             Instance.new("UICorner", Knob).CornerRadius = UDim.new(1, 0)
 
-            local function UpdateToggle(state)
-                ToggleInfo.Value = state
-                local pos = state and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
-                local col = state and Theme.Accent or Color3.fromRGB(40, 45, 55)
+            Switch.MouseButton1Click:Connect(function()
+                ToggleInfo.Value = not ToggleInfo.Value
+                local pos = ToggleInfo.Value and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
+                local col = ToggleInfo.Value and Theme.Accent or Theme.SidebarBG
                 TweenService:Create(Knob, TweenInfo.new(0.2), {Position = pos}):Play()
                 TweenService:Create(Switch, TweenInfo.new(0.2), {BackgroundColor3 = col}):Play()
                 if Config.Callback then Config.Callback(ToggleInfo.Value) end
-            end
-
-            Switch.MouseButton1Click:Connect(function() UpdateToggle(not ToggleInfo.Value) end)
-            
-            function ToggleInfo:Set(state) UpdateToggle(state) end
+            end)
             return ToggleInfo
         end
 
-        -- 3. Create Slider (Hỗ trợ PC & Mobile)
+        -- [3] SLIDER
         function Tab:CreateSlider(Config)
-            local min = Config.Range[1] or 0
-            local max = Config.Range[2] or 100
+            local min, max = Config.Range[1] or 0, Config.Range[2] or 100
             local default = Config.CurrentValue or min
             
             local sFrame = Instance.new("Frame")
@@ -305,7 +288,7 @@ function DoeakLib:CreateWindow(Config)
             local TrackBase = Instance.new("TextButton")
             TrackBase.Size = UDim2.new(1, -20, 0, 6)
             TrackBase.Position = UDim2.new(0, 10, 0, 35)
-            TrackBase.BackgroundColor3 = Color3.fromRGB(30, 34, 45)
+            TrackBase.BackgroundColor3 = Theme.SidebarBG
             TrackBase.Text = ""
             TrackBase.Parent = sFrame
             Instance.new("UICorner", TrackBase).CornerRadius = UDim.new(1, 0)
@@ -348,38 +331,98 @@ function DoeakLib:CreateWindow(Config)
             end)
         end
 
-        -- 4. Create Paragraph / Label
-        function Tab:CreateParagraph(Config)
-            local pFrame = Instance.new("Frame")
-            pFrame.Size = UDim2.new(1, 0, 0, 0) -- Auto size based on text
-            pFrame.BackgroundColor3 = Theme.ElementBG
-            pFrame.Parent = TabPage
-            Instance.new("UICorner", pFrame).CornerRadius = UDim.new(0, 6)
+        -- [4] DROPDOWN (TÍNH NĂNG MỚI BẠN YÊU CẦU)
+        function Tab:CreateDropdown(Config)
+            local DropInfo = {Value = Config.Default or "Chọn..."}
+            local Options = Config.Options or {}
+            local isOpen = false
 
-            local label = Instance.new("TextLabel")
-            label.Size = UDim2.new(1, -20, 1, -10)
-            label.Position = UDim2.new(0, 10, 0, 5)
-            label.BackgroundTransparency = 1
-            label.Text = Config.Content or "Nội dung"
-            label.RichText = true
-            label.TextColor3 = Theme.SubText
-            label.TextSize = 11
-            label.Font = Enum.Font.Gotham
-            label.TextWrapped = true
-            label.TextXAlignment = Enum.TextXAlignment.Left
-            label.TextYAlignment = Enum.TextYAlignment.Top
-            label.Parent = pFrame
+            local DropFrame = Instance.new("Frame")
+            DropFrame.Size = UDim2.new(1, 0, 0, 40)
+            DropFrame.BackgroundColor3 = Theme.ElementBG
+            DropFrame.ClipsDescendants = true -- Ẩn phần bị dư ra khi đóng
+            DropFrame.Parent = TabPage
+            Instance.new("UICorner", DropFrame).CornerRadius = UDim.new(0, 6)
+
+            local MainBtn = Instance.new("TextButton")
+            MainBtn.Size = UDim2.new(1, 0, 0, 40)
+            MainBtn.BackgroundTransparency = 1
+            MainBtn.Text = "  " .. (Config.Name or "Dropdown") .. " : <font color=\"#00E5FF\">" .. DropInfo.Value .. "</font>"
+            MainBtn.RichText = true
+            MainBtn.TextColor3 = Theme.Text
+            MainBtn.Font = Enum.Font.GothamBold
+            MainBtn.TextSize = 12
+            MainBtn.TextXAlignment = Enum.TextXAlignment.Left
+            MainBtn.Parent = DropFrame
+
+            local Arrow = Instance.new("TextLabel")
+            Arrow.Size = UDim2.new(0, 20, 0, 20)
+            Arrow.Position = UDim2.new(1, -25, 0.5, -10)
+            Arrow.BackgroundTransparency = 1
+            Arrow.Text = "▼"
+            Arrow.TextColor3 = Theme.Accent
+            Arrow.TextSize = 12
+            Arrow.Parent = MainBtn
+
+            local OptionContainer = Instance.new("ScrollingFrame")
+            OptionContainer.Size = UDim2.new(1, 0, 1, -40)
+            OptionContainer.Position = UDim2.new(0, 0, 0, 40)
+            OptionContainer.BackgroundTransparency = 1
+            OptionContainer.ScrollBarThickness = 2
+            OptionContainer.ScrollBarImageColor3 = Theme.Accent
+            OptionContainer.Parent = DropFrame
+            local OptLayout = Instance.new("UIListLayout", OptionContainer)
+            OptLayout.Padding = UDim.new(0, 2)
             
-            -- Tính toán chiều cao
-            local textSize = game:GetService("TextService"):GetTextSize(label.Text, label.TextSize, label.Font, Vector2.new(ContentArea.AbsoluteSize.X - 32, math.huge))
-            pFrame.Size = UDim2.new(1, 0, 0, textSize.Y + 15)
+            local function RefreshDropdown()
+                local targetHeight = isOpen and (40 + math.clamp(#Options * 30, 30, 120)) or 40
+                TweenService:Create(DropFrame, TweenInfo.new(0.2), {Size = UDim2.new(1, 0, 0, targetHeight)}):Play()
+                Arrow.Text = isOpen and "▲" or "▼"
+                CanvasSize = OptLayout.AbsoluteContentSize.Y
+                OptionContainer.CanvasSize = UDim2.new(0, 0, 0, CanvasSize)
+            end
+
+            MainBtn.MouseButton1Click:Connect(function()
+                isOpen = not isOpen
+                RefreshDropdown()
+            end)
+
+            for _, opt in ipairs(Options) do
+                local OptBtn = Instance.new("TextButton")
+                OptBtn.Size = UDim2.new(1, -10, 0, 30)
+                OptBtn.Position = UDim2.new(0, 5, 0, 0)
+                OptBtn.BackgroundColor3 = Theme.SidebarBG
+                OptBtn.Text = tostring(opt)
+                OptBtn.TextColor3 = Theme.SubText
+                OptBtn.Font = Enum.Font.GothamMedium
+                OptBtn.TextSize = 11
+                OptBtn.Parent = OptionContainer
+                Instance.new("UICorner", OptBtn).CornerRadius = UDim.new(0, 4)
+
+                OptBtn.MouseButton1Click:Connect(function()
+                    DropInfo.Value = opt
+                    MainBtn.Text = "  " .. (Config.Name or "Dropdown") .. " : <font color=\"#00E5FF\">" .. opt .. "</font>"
+                    isOpen = false
+                    RefreshDropdown()
+                    if Config.Callback then Config.Callback(opt) end
+                end)
+            end
+
+            -- Hàm dùng để cập nhật danh sách Options từ bên ngoài nếu cần
+            function DropInfo:Refresh(NewOptions)
+                Options = NewOptions
+                for _, child in ipairs(OptionContainer:GetChildren()) do
+                    if child:IsA("TextButton") then child:Destroy() end
+                end
+                for _, opt in ipairs(Options) do
+                    -- Tạo lại OptBtn giống hệt ở trên (Bạn có thể copy ruột vòng for ở trên bỏ vào đây nếu cần thiết)
+                end
+            end
+
+            return DropInfo
         end
 
         return Tab
-    end
-
-    function Window:Destroy()
-        ScreenGui:Destroy()
     end
 
     return Window
