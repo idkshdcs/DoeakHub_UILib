@@ -1053,6 +1053,85 @@ function DoeakLib:CreateWindow(Config)
             return keyBtn
         end
 
+                -- ==================== TOGGLE BUTTON ====================
+        -- Nút bấm dạng toggle: xám khi tắt, xanh lá khi bật
+        function Tab:CreateToggleButton(Config)
+            Config = Config or {}
+            local state = Config.CurrentValue or false
+
+            local btn = Instance.new("TextButton")
+            btn.Size = UDim2.new(1, -8, 0, 44)
+            btn.BackgroundColor3 = state and Color3.fromRGB(105, 200, 145) or Theme.ElementBG
+            btn.BorderSizePixel = 0
+            btn.Text = ""
+            btn.AutoButtonColor = false
+            btn.Parent = TabPage
+            corner(btn, 8)
+            local btnStroke = stroke(btn, state and Color3.fromRGB(105, 200, 145) or Theme.Stroke, 1.5, 0.3)
+
+            local lbl = Instance.new("TextLabel")
+            lbl.Size = UDim2.new(1, -90, 1, 0)
+            lbl.Position = UDim2.new(0, 14, 0, 0)
+            lbl.BackgroundTransparency = 1
+            lbl.Text = Config.Name or "Toggle Button"
+            lbl.TextColor3 = state and Color3.fromRGB(15, 30, 22) or Theme.Text
+            lbl.Font = Enum.Font.GothamBold
+            lbl.TextSize = 12
+            lbl.TextXAlignment = Enum.TextXAlignment.Left
+            lbl.TextTruncate = Enum.TextTruncate.AtEnd
+            lbl.Parent = btn
+
+            local statusLbl = Instance.new("TextLabel")
+            statusLbl.Size = UDim2.new(0, 60, 1, 0)
+            statusLbl.Position = UDim2.new(1, -70, 0, 0)
+            statusLbl.BackgroundTransparency = 1
+            statusLbl.Text = state and "● ON" or "○ OFF"
+            statusLbl.TextColor3 = state and Color3.fromRGB(15, 30, 22) or Theme.Muted
+            statusLbl.Font = Enum.Font.GothamBold
+            statusLbl.TextSize = 11
+            statusLbl.Parent = btn
+
+            local function updateVisual()
+                tween(btn, 0.2, {
+                    BackgroundColor3 = state and Color3.fromRGB(105, 200, 145) or Theme.ElementBG
+                })
+                tween(btnStroke, 0.2, {
+                    Color = state and Color3.fromRGB(105, 200, 145) or Theme.Stroke,
+                    Transparency = state and 0.2 or 0.4
+                })
+                tween(lbl, 0.2, {
+                    TextColor3 = state and Color3.fromRGB(15, 30, 22) or Theme.Text
+                })
+                tween(statusLbl, 0.2, {
+                    TextColor3 = state and Color3.fromRGB(15, 30, 22) or Theme.Muted
+                })
+                statusLbl.Text = state and "● ON" or "○ OFF"
+            end
+
+            btn.MouseEnter:Connect(function()
+                if not state then tween(btn, 0.15, {BackgroundColor3 = Theme.ElementHi}) end
+            end)
+            btn.MouseLeave:Connect(function()
+                if not state then tween(btn, 0.15, {BackgroundColor3 = Theme.ElementBG}) end
+            end)
+
+            btn.MouseButton1Click:Connect(function()
+                state = not state
+                updateVisual()
+                pcall(function() if Config.Callback then Config.Callback(state) end end)
+            end)
+
+            return {
+                Value = state,
+                Set = function(self, v)
+                    state = v
+                    updateVisual()
+                    pcall(function() if Config.Callback then Config.Callback(state) end end)
+                end,
+                Button = btn,
+            }
+        end
+        
         -- ==================== DIVIDER ====================
         function Tab:CreateDivider()
             local d = Instance.new("Frame")
