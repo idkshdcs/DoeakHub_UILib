@@ -1,7 +1,7 @@
 -- =========================================================
--- DOEAK HUB UI LIBRARY | v4.0
+-- DOEAK HUB UI LIBRARY | v4.1
 -- Theme: Obsidian Gray + Platinum Silver
--- Fix: Sidebar scroll, Slider input, Cleaner layout
+-- Fix: Sidebar scroll, tab overflow, slider input
 -- =========================================================
 
 local DoeakLib = {}
@@ -30,7 +30,6 @@ local UIParent = getSafeParent()
 -- THEME: OBSIDIAN GRAY + PLATINUM SILVER
 -- =========================================================
 local Theme = {
-    -- Nền
     MainBG      = Color3.fromRGB(22, 24, 28),
     SidebarBG   = Color3.fromRGB(16, 17, 21),
     ContentBG   = Color3.fromRGB(26, 28, 33),
@@ -38,19 +37,16 @@ local Theme = {
     ElementHi   = Color3.fromRGB(46, 50, 58),
     ElementSel  = Color3.fromRGB(58, 62, 72),
 
-    -- Viền
     Stroke      = Color3.fromRGB(52, 56, 64),
     StrokeHi    = Color3.fromRGB(80, 86, 96),
 
-    -- Accent: Bạc platinum
-    Accent      = Color3.fromRGB(200, 205, 215),   -- Bạc chính
-    AccentBright= Color3.fromRGB(235, 238, 245),   -- Bạc sáng
-    AccentDim   = Color3.fromRGB(140, 146, 158),   -- Bạc tối
+    Accent      = Color3.fromRGB(200, 205, 215),
+    AccentBright= Color3.fromRGB(235, 238, 245),
+    AccentDim   = Color3.fromRGB(140, 146, 158),
     Green       = Color3.fromRGB(105, 200, 145),
     Red         = Color3.fromRGB(225, 95, 105),
     Blue        = Color3.fromRGB(120, 165, 230),
 
-    -- Chữ
     Text        = Color3.fromRGB(240, 242, 246),
     SubText     = Color3.fromRGB(160, 165, 175),
     Muted       = Color3.fromRGB(100, 105, 115),
@@ -106,9 +102,6 @@ local function tween(obj, t, props, style, dir)
     return tw
 end
 
--- =========================================================
--- SHADOW (giả lập drop shadow)
--- =========================================================
 local function addShadow(parent, sizeOffset, cornerRadius)
     local s = Instance.new("Frame")
     s.Name = "_Shadow"
@@ -128,7 +121,7 @@ local function addShadow(parent, sizeOffset, cornerRadius)
 end
 
 -- =========================================================
--- GLOBAL SLIDER INPUT (fix slider không chạy)
+-- GLOBAL SLIDER INPUT
 -- =========================================================
 local activeSlider = nil
 
@@ -417,19 +410,21 @@ function DoeakLib:CreateWindow(Config)
         MinBtn.Visible = false
     end)
 
-    -- ===== SIDEBAR (ScrollingFrame - FIX tab cut off) =====
+    -- ===== SIDEBAR (FIX tràn tab + auto scroll) =====
     local Sidebar = Instance.new("ScrollingFrame")
-    Sidebar.Size = UDim2.new(0, 168, 1, -94)
+    Sidebar.Name = "Sidebar"
+    Sidebar.Size = UDim2.new(0, 172, 1, -94)
     Sidebar.Position = UDim2.new(0, 12, 0, 82)
     Sidebar.BackgroundColor3 = Theme.SidebarBG
     Sidebar.BorderSizePixel = 0
-    Sidebar.ScrollBarThickness = 3
-    Sidebar.ScrollBarImageColor3 = Theme.AccentDim
-    Sidebar.ScrollBarImageTransparency = 0.3
-    Sidebar.CanvasSize = UDim2.new(0, 0, 0, 0)
-    Sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    Sidebar.ClipsDescendants = true
+    Sidebar.ScrollingEnabled = true
     Sidebar.ScrollingDirection = Enum.ScrollingDirection.Y
+    Sidebar.ScrollBarThickness = 4
+    Sidebar.ScrollBarImageColor3 = Theme.AccentDim
+    Sidebar.ScrollBarImageTransparency = 0.4
     Sidebar.ElasticBehavior = Enum.ElasticBehavior.Never
+    Sidebar.CanvasSize = UDim2.new(0, 0, 0, 0)
     Sidebar.Parent = MainFrame
     corner(Sidebar, 10)
     stroke(Sidebar, Theme.Stroke, 1, 0.5)
@@ -438,14 +433,30 @@ function DoeakLib:CreateWindow(Config)
     SideLayout.Parent = Sidebar
     SideLayout.SortOrder = Enum.SortOrder.LayoutOrder
     SideLayout.Padding = UDim.new(0, 5)
-    padding(Sidebar, 8, 8, 8, 14)  -- Right padding lớn hơn để chừa chỗ scrollbar
+
+    local SidePad = Instance.new("UIPadding")
+    SidePad.PaddingTop    = UDim.new(0, 8)
+    SidePad.PaddingBottom = UDim.new(0, 8)
+    SidePad.PaddingLeft   = UDim.new(0, 8)
+    SidePad.PaddingRight  = UDim.new(0, 16)
+    SidePad.Parent = Sidebar
+
+    -- Tự update CanvasSize mỗi khi content thay đổi
+    local function updateSidebarCanvas()
+        local h = SideLayout.AbsoluteContentSize.Y
+        Sidebar.CanvasSize = UDim2.new(0, 0, 0, h + 24)
+    end
+    SideLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateSidebarCanvas)
+    task.defer(updateSidebarCanvas)
 
     -- ===== CONTENT =====
     local Content = Instance.new("Frame")
-    Content.Size = UDim2.new(1, -204, 1, -94)
-    Content.Position = UDim2.new(0, 192, 0, 82)
+    Content.Name = "Content"
+    Content.Size = UDim2.new(1, -208, 1, -94)
+    Content.Position = UDim2.new(0, 196, 0, 82)
     Content.BackgroundColor3 = Theme.ContentBG
     Content.BorderSizePixel = 0
+    Content.ClipsDescendants = true
     Content.Parent = MainFrame
     corner(Content, 10)
     stroke(Content, Theme.Stroke, 1, 0.5)
@@ -469,6 +480,7 @@ function DoeakLib:CreateWindow(Config)
         TabBtn.Font = Enum.Font.GothamMedium
         TabBtn.TextSize = 12
         TabBtn.TextXAlignment = Enum.TextXAlignment.Left
+        TabBtn.TextTruncate = Enum.TextTruncate.AtEnd
         TabBtn.AutoButtonColor = false
         TabBtn.Parent = Sidebar
         corner(TabBtn, 8)
@@ -492,11 +504,14 @@ function DoeakLib:CreateWindow(Config)
         TabPage.Size = UDim2.new(1, 0, 1, 0)
         TabPage.BackgroundTransparency = 1
         TabPage.BorderSizePixel = 0
+        TabPage.ClipsDescendants = true
         TabPage.ScrollBarThickness = 3
         TabPage.ScrollBarImageColor3 = Theme.AccentDim
         TabPage.ScrollBarImageTransparency = 0.3
         TabPage.CanvasSize = UDim2.new(0, 0, 0, 0)
         TabPage.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        TabPage.ScrollingDirection = Enum.ScrollingDirection.Y
+        TabPage.ElasticBehavior = Enum.ElasticBehavior.Never
         TabPage.Visible = false
         TabPage.Parent = Content
         local PageLayout = Instance.new("UIListLayout")
@@ -506,6 +521,9 @@ function DoeakLib:CreateWindow(Config)
         padding(TabPage, 4, 16, 4, 8)
 
         table.insert(TabsList, {Btn = TabBtn, Page = TabPage, Accent = Accent, Stroke = btnStroke})
+
+        -- Cập nhật canvas sau khi thêm tab
+        task.defer(function() updateSidebarCanvas() end)
 
         if FirstTab then
             TabPage.Visible = true
@@ -614,6 +632,7 @@ function DoeakLib:CreateWindow(Config)
             lbl.Font = Enum.Font.GothamBold
             lbl.TextSize = 12
             lbl.TextXAlignment = Enum.TextXAlignment.Left
+            lbl.TextTruncate = Enum.TextTruncate.AtEnd
             lbl.Parent = btn
 
             local arrow = Instance.new("TextLabel")
@@ -667,6 +686,7 @@ function DoeakLib:CreateWindow(Config)
             lbl.Font = Enum.Font.GothamBold
             lbl.TextSize = 12
             lbl.TextXAlignment = Enum.TextXAlignment.Left
+            lbl.TextTruncate = Enum.TextTruncate.AtEnd
             lbl.Parent = frame
 
             if Config.Description then
@@ -679,6 +699,7 @@ function DoeakLib:CreateWindow(Config)
                 desc.Font = Enum.Font.Gotham
                 desc.TextSize = 9
                 desc.TextXAlignment = Enum.TextXAlignment.Left
+                desc.TextTruncate = Enum.TextTruncate.AtEnd
                 desc.Parent = frame
             end
 
@@ -699,7 +720,7 @@ function DoeakLib:CreateWindow(Config)
             knob.BorderSizePixel = 0
             knob.Parent = switch
             round(knob)
-            local knobStroke = stroke(knob, Color3.fromRGB(200, 205, 215), 1, 0.6)
+            stroke(knob, Color3.fromRGB(200, 205, 215), 1, 0.6)
 
             frame.MouseEnter:Connect(function()
                 tween(frame, 0.15, {BackgroundColor3 = Theme.ElementHi})
@@ -730,7 +751,7 @@ function DoeakLib:CreateWindow(Config)
             }
         end
 
-        -- ==================== SLIDER (FIX) ====================
+        -- ==================== SLIDER ====================
         function Tab:CreateSlider(Config)
             Config = Config or {}
             local min, max = Config.Range[1] or 0, Config.Range[2] or 100
@@ -810,7 +831,6 @@ function DoeakLib:CreateWindow(Config)
                 end
             end)
 
-            -- Hover effect
             trackBtn.MouseEnter:Connect(function()
                 tween(head, 0.15, {Size = UDim2.new(0, 18, 0, 18), Position = UDim2.new(1, -9, 0.5, -9)})
             end)
@@ -860,6 +880,7 @@ function DoeakLib:CreateWindow(Config)
             lbl.Font = Enum.Font.GothamBold
             lbl.TextSize = 12
             lbl.TextXAlignment = Enum.TextXAlignment.Left
+            lbl.TextTruncate = Enum.TextTruncate.AtEnd
             lbl.Parent = mainBtn
 
             local arrow = Instance.new("TextLabel")
