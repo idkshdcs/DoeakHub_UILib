@@ -4,39 +4,21 @@
     ║  Modern · Smooth · Responsive · Themeable · Production-ready║
     ╚══════════════════════════════════════════════════════════════╝
     
-    API tương thích 100% với v1:
-        local Lib = loadstring(...)()
-        local Window = Lib:CreateWindow({...})
-        local Tab = Window:CreateTab("Main", "◈")
-        Tab:CreateSection("Section")
-        Tab:CreateButton({...})
-        Tab:CreateToggle({...})
-        Tab:CreateSlider({...})
-        Tab:CreateDropdown({...})
-        Tab:CreateTextbox({...})
-        Tab:CreateLabel("text")
-        Tab:CreateParagraph({Title=..., Content=...})
-        Lib:Notify(title, text, color, duration, icon)
+    API tương thích 100% với v1 — tất cả script cũ chạy nguyên.
     
     TÍNH NĂNG MỚI v2:
-        ✦ Theme system (Dark/Light/Midnight/Blood/Neon)
+        ✦ 5 Theme (Dark / Midnight / Neon / Blood / Light)
         ✦ Draggable window (title bar + background)
         ✦ Minimize / Maximize / Close
         ✦ Smooth Tween animations mọi element
-        ✦ Search bar tìm kiếm element
-        ✦ Config save/load
-        ✦ Responsive (mobile + PC)
         ✦ Notification stack (nhiều notif cùng lúc)
-        ✦ Tooltip khi hover
-        ✦ Keybind toggle UI (RightControl)
-        ✦ Watermark
-        ✦ Intro animation
-        ✦ Blur background (acrylic)
-        ✦ Scrollbar mượt
-        ✦ Section collapse/expand
-        ✦ Dropdown searchable
-        ✦ Slider precise mode
-        ✦ Color picker
+        ✦ Intro animation khi mở UI
+        ✦ Drop shadow cho window
+        ✦ Hover + press feedback mọi nút
+        ✦ Scrollbar mượt với màu accent
+        ✦ Tooltip, Watermark, Keybind toggle (RightControl)
+        ✦ Color picker, Keybind element
+        ✦ Recursive theme apply
 ]]
 
 local Players = game:GetService("Players")
@@ -44,7 +26,6 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
-local GuiService = game:GetService("GuiService")
 
 local LocalPlayer = Players.LocalPlayer
 
@@ -178,22 +159,19 @@ end
 -- ════════════════════════════════════════════════════════════════
 --  NOTIFICATION SYSTEM
 -- ════════════════════════════════════════════════════════════════
-local Notifications = {
-    Holder = nil,
-    Active = {},
-}
+local Notifications = {Holder = nil}
 
 local function initNotifications()
     if Notifications.Holder then return end
-    local gui = CoreGui:FindFirstChild("DoeakUI") or create("ScreenGui", {
-        Name = "DoeakUI",
+    local gui = CoreGui:FindFirstChild("DoeakUI_Notify") or create("ScreenGui", {
+        Name = "DoeakUI_Notify",
         ResetOnSpawn = false,
         ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
         DisplayOrder = 9999,
     }, CoreGui)
 
     Notifications.Holder = create("Frame", {
-        Name = "Notifications",
+        Name = "Holder",
         Size = UDim2.new(0, 340, 1, -40),
         Position = UDim2.new(1, -360, 0, 20),
         BackgroundTransparency = 1,
@@ -226,8 +204,8 @@ local function notify(title, text, color, duration, icon)
         BorderSizePixel = 0,
     }, notif)
 
-    -- Icon
-    create("TextLabel", {
+    -- Icon box
+    local iconBox = create("TextLabel", {
         Size = UDim2.new(0, 40, 0, 40),
         Position = UDim2.new(0, 12, 0, 15),
         BackgroundColor3 = color,
@@ -237,6 +215,7 @@ local function notify(title, text, color, duration, icon)
         TextSize = 20,
         Font = Enum.Font.GothamBold,
     }, notif)
+    corner(iconBox, 8)
 
     -- Title
     create("TextLabel", {
@@ -285,7 +264,7 @@ local function notify(title, text, color, duration, icon)
 end
 
 -- ════════════════════════════════════════════════════════════════
---  MAIN LIBRARY
+--  LIBRARY
 -- ════════════════════════════════════════════════════════════════
 local Lib = {}
 Lib.__index = Lib
@@ -302,11 +281,11 @@ function Lib:CreateWindow(config)
     self.ActiveTab = nil
     self.Visible = true
     self.Minimized = false
+    self.AllElements = {}
 
     local t = Themes[CurrentTheme]
     self.Theme = t
 
-    -- ScreenGui
     local guiName = "DoeakUI_" .. tostring(config.Name or "Window")
     local existing = CoreGui:FindFirstChild(guiName)
     if existing then existing:Destroy() end
@@ -319,20 +298,11 @@ function Lib:CreateWindow(config)
         IgnoreGuiInset = true,
     }, CoreGui)
 
-    -- Backdrop
-    local backdrop = create("Frame", {
-        Name = "Backdrop",
-        Size = UDim2.new(1, 0, 1, 0),
-        BackgroundColor3 = t.Shadow,
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-    }, self.Gui)
-
-    -- Main window
     local winSize = config.Size or UDim2.new(0, 600, 0, 420)
+
     self.Main = create("Frame", {
         Name = "Main",
-        Size = UDim2.new(0, 0, 0, 0),  -- animation from 0
+        Size = UDim2.new(0, 0, 0, 0),
         Position = UDim2.new(0.5, -winSize.X.Offset/2, 0.5, -winSize.Y.Offset/2),
         BackgroundColor3 = t.Background,
         BorderSizePixel = 0,
@@ -439,12 +409,8 @@ function Lib:CreateWindow(config)
     self.CloseBtn = makeBtn("✕", -38, t.Danger)
     self.MinBtn = makeBtn("—", -72, t.Warning)
 
-    self.CloseBtn.MouseButton1Click:Connect(function()
-        self:Hide()
-    end)
-    self.MinBtn.MouseButton1Click:Connect(function()
-        self:ToggleMinimize()
-    end)
+    self.CloseBtn.MouseButton1Click:Connect(function() self:Hide() end)
+    self.MinBtn.MouseButton1Click:Connect(function() self:ToggleMinimize() end)
 
     -- Watermark
     create("TextLabel", {
@@ -520,7 +486,7 @@ function Lib:CreateWindow(config)
         end
     end)
 
-    -- ── Toggle keybind ─────────────────────────────────────
+    -- ── Toggle keybind (RightControl) ──────────────────────
     UserInputService.InputBegan:Connect(function(input, gpe)
         if gpe then return end
         if input.KeyCode == Enum.KeyCode.RightControl then
@@ -528,7 +494,7 @@ function Lib:CreateWindow(config)
         end
     end)
 
-    -- ── Apply theme method ─────────────────────────────────
+    -- ── Methods ────────────────────────────────────────────
     function self:SetTheme(name)
         if not Themes[name] then return end
         CurrentTheme = name
@@ -538,11 +504,36 @@ function Lib:CreateWindow(config)
 
     function self:ApplyTheme()
         local th = self.Theme
-        self.Main.BackgroundColor3 = th.Background
-        self.MainStroke.Color = th.Border
-        self.TitleBar.BackgroundColor3 = th.Surface
-        self.TitleLabel.TextColor3 = th.Text
-        -- Recursive apply would be implemented here in production
+        -- Apply to all registered elements recursively
+        local function applyTo(obj)
+            if not obj or not obj.Parent then return end
+            for _, child in ipairs(obj:GetDescendants()) do
+                if child:IsA("Frame") and child.BackgroundColor3 then
+                    -- Best-effort mapping (không hoàn hảo nhưng đủ dùng)
+                    if child.BackgroundColor3 == t.Background then
+                        child.BackgroundColor3 = th.Background
+                    elseif child.BackgroundColor3 == t.Surface then
+                        child.BackgroundColor3 = th.Surface
+                    elseif child.BackgroundColor3 == t.SurfaceAlt then
+                        child.BackgroundColor3 = th.SurfaceAlt
+                    end
+                elseif child:IsA("TextLabel") or child:IsA("TextButton") or child:IsA("TextBox") then
+                    if child.TextColor3 == t.Text then
+                        child.TextColor3 = th.Text
+                    elseif child.TextColor3 == t.TextDim then
+                        child.TextColor3 = th.TextDim
+                    elseif child.TextColor3 == t.Accent then
+                        child.TextColor3 = th.Accent
+                    end
+                elseif child:IsA("UIStroke") then
+                    if child.Color == t.Border then
+                        child.Color = th.Border
+                    end
+                end
+            end
+        end
+        applyTo(self.Gui)
+        t = th
     end
 
     function self:Show()
@@ -591,7 +582,6 @@ function Lib:CreateTab(name, icon)
     tab.Elements = {}
     tab.Order = 0
 
-    -- Tab button
     local btn = create("TextButton", {
         Size = UDim2.new(0, 100, 1, 0),
         BackgroundColor3 = t.SurfaceAlt,
@@ -605,7 +595,6 @@ function Lib:CreateTab(name, icon)
     }, self.TabBar)
     corner(btn, 8)
 
-    -- Underline indicator
     local indicator = create("Frame", {
         Size = UDim2.new(1, -12, 0, 2),
         Position = UDim2.new(0, 6, 1, -3),
@@ -615,7 +604,6 @@ function Lib:CreateTab(name, icon)
     }, btn)
     corner(indicator, 1)
 
-    -- Content container
     local container = create("ScrollingFrame", {
         Name = "TabContent_" .. name,
         Size = UDim2.new(1, 0, 1, 0),
@@ -646,18 +634,20 @@ function Lib:CreateTab(name, icon)
     tab.Indicator = indicator
     tab.Container = container
 
-    -- ── Add element method ─────────────────────────────────
     function tab:AddElement(elem)
         self.Order = self.Order + 1
         elem.Frame.LayoutOrder = self.Order
         elem.Frame.Parent = self.Container
         table.insert(self.Elements, elem)
+        if self.Theme then
+            table.insert(self.Theme.AllElements or {}, elem)
+        end
         return elem
     end
 
     -- ── Section ────────────────────────────────────────────
     function tab:CreateSection(title)
-        local t2 = self.Theme or Themes[CurrentTheme]
+        local t2 = Themes[CurrentTheme]
         local frame = create("Frame", {
             Size = UDim2.new(1, -8, 0, 28),
             BackgroundTransparency = 1,
@@ -686,7 +676,7 @@ function Lib:CreateTab(name, icon)
 
     -- ── Label ──────────────────────────────────────────────
     function tab:CreateLabel(text)
-        local t2 = self.Theme or Themes[CurrentTheme]
+        local t2 = Themes[CurrentTheme]
         local frame = create("Frame", {
             Size = UDim2.new(1, -8, 0, 22),
             BackgroundTransparency = 1,
@@ -711,7 +701,7 @@ function Lib:CreateTab(name, icon)
 
     -- ── Paragraph ──────────────────────────────────────────
     function tab:CreateParagraph(config)
-        local t2 = self.Theme or Themes[CurrentTheme]
+        local t2 = Themes[CurrentTheme]
         local frame = create("Frame", {
             Size = UDim2.new(1, -8, 0, 80),
             BackgroundColor3 = t2.Surface,
@@ -756,7 +746,7 @@ function Lib:CreateTab(name, icon)
 
     -- ── Button ─────────────────────────────────────────────
     function tab:CreateButton(config)
-        local t2 = self.Theme or Themes[CurrentTheme]
+        local t2 = Themes[CurrentTheme]
         local frame = create("TextButton", {
             Size = UDim2.new(1, -8, 0, 40),
             BackgroundColor3 = t2.Surface,
@@ -805,9 +795,7 @@ function Lib:CreateTab(name, icon)
             tween(label, 0.15, {TextColor3 = t2.Text})
         end)
         frame.MouseButton1Click:Connect(function()
-            if config.Callback then
-                task.spawn(config.Callback)
-            end
+            if config.Callback then task.spawn(config.Callback) end
         end)
 
         local api = {Frame = frame, Type = "Button"}
@@ -818,7 +806,7 @@ function Lib:CreateTab(name, icon)
 
     -- ── Toggle ─────────────────────────────────────────────
     function tab:CreateToggle(config)
-        local t2 = self.Theme or Themes[CurrentTheme]
+        local t2 = Themes[CurrentTheme]
         local frame = create("Frame", {
             Size = UDim2.new(1, -8, 0, 40),
             BackgroundColor3 = t2.Surface,
@@ -876,18 +864,12 @@ function Lib:CreateTab(name, icon)
                 or input.UserInputType == Enum.UserInputType.Touch then
                 state = not state
                 update(true)
-                if config.Callback then
-                    task.spawn(config.Callback, state)
-                end
+                if config.Callback then task.spawn(config.Callback, state) end
             end
         end)
 
         local api = {Frame = frame, Type = "Toggle", Flag = config.Flag}
-        function api:Set(v)
-            state = v
-            update(true)
-            if config.Callback then task.spawn(config.Callback, v) end
-        end
+        function api:Set(v) state = v; update(true); if config.Callback then task.spawn(config.Callback, v) end end
         function api:Get() return state end
         self:AddElement(api)
         return api
@@ -895,7 +877,7 @@ function Lib:CreateTab(name, icon)
 
     -- ── Slider ─────────────────────────────────────────────
     function tab:CreateSlider(config)
-        local t2 = self.Theme or Themes[CurrentTheme]
+        local t2 = Themes[CurrentTheme]
         local min = config.Min or 0
         local max = config.Max or 100
         local val = math.clamp(config.Default or min, min, max)
@@ -1002,7 +984,7 @@ function Lib:CreateTab(name, icon)
 
     -- ── Dropdown ───────────────────────────────────────────
     function tab:CreateDropdown(config)
-        local t2 = self.Theme or Themes[CurrentTheme]
+        local t2 = Themes[CurrentTheme]
         local options = config.Options or {}
         local current = config.CurrentOption or (options[1] and {options[1]} or {})
         local opened = false
@@ -1157,7 +1139,7 @@ function Lib:CreateTab(name, icon)
 
     -- ── Textbox ────────────────────────────────────────────
     function tab:CreateTextbox(config)
-        local t2 = self.Theme or Themes[CurrentTheme]
+        local t2 = Themes[CurrentTheme]
         local frame = create("Frame", {
             Size = UDim2.new(1, -8, 0, 40),
             BackgroundColor3 = t2.Surface,
@@ -1199,12 +1181,8 @@ function Lib:CreateTab(name, icon)
         end)
         box.FocusLost:Connect(function(enter)
             tween(frame, 0.15, {BackgroundColor3 = t2.Surface})
-            if config.Callback then
-                task.spawn(config.Callback, box.Text)
-            end
-            if config.RemoveTextAfterFocusLost then
-                box.Text = ""
-            end
+            if config.Callback then task.spawn(config.Callback, box.Text) end
+            if config.RemoveTextAfterFocusLost then box.Text = "" end
         end)
 
         local api = {Frame = frame, Type = "Textbox", Flag = config.Flag}
@@ -1216,7 +1194,7 @@ function Lib:CreateTab(name, icon)
 
     -- ── Keybind ────────────────────────────────────────────
     function tab:CreateKeybind(config)
-        local t2 = self.Theme or Themes[CurrentTheme]
+        local t2 = Themes[CurrentTheme]
         local frame = create("Frame", {
             Size = UDim2.new(1, -8, 0, 40),
             BackgroundColor3 = t2.Surface,
@@ -1268,9 +1246,9 @@ function Lib:CreateTab(name, icon)
         return api
     end
 
-    -- ── Color Picker ───────────────────────────────────────
+    -- ── ColorPicker ────────────────────────────────────────
     function tab:CreateColorPicker(config)
-        local t2 = self.Theme or Themes[CurrentTheme]
+        local t2 = Themes[CurrentTheme]
         local frame = create("Frame", {
             Size = UDim2.new(1, -8, 0, 40),
             BackgroundColor3 = t2.Surface,
@@ -1302,7 +1280,6 @@ function Lib:CreateTab(name, icon)
         stroke(colorBox, t2.Border, 1, 0.3)
 
         colorBox.MouseButton1Click:Connect(function()
-            -- Simplified: cycle through a small palette
             local palette = {
                 Color3.fromRGB(94, 129, 244),
                 Color3.fromRGB(105, 200, 145),
@@ -1343,7 +1320,7 @@ function Lib:CreateTab(name, icon)
 end
 
 -- ════════════════════════════════════════════════════════════════
---  BOOT MESSAGE
+--  BOOT
 -- ════════════════════════════════════════════════════════════════
 notify("DoeakHub UI v2", "Library loaded successfully!", Color3.fromRGB(105, 200, 145), 3, "★")
 print("[DoeakUI v2] Loaded — RightControl to toggle UI")
