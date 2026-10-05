@@ -1,18 +1,7 @@
 --[[
     ╔══════════════════════════════════════════════════════════════╗
-    ║           DOEAKHUB UI LIBRARY v4 — CLEAN & MODERN           ║
-    ║   Minimal · Eye-friendly · Top banner · Timer · Refined     ║
+    ║           DOEAKHUB UI LIBRARY v4.1 — FIXED                  ║
     ╚══════════════════════════════════════════════════════════════╝
-    
-    v4 CHANGES:
-        ✦ TOP BANNER notification (3s timer bar, fade out)
-        ✦ Refined UI — softer, cleaner, less saturated
-        ✦ Better spacing & typography
-        ✦ Sidebar right with subtle hover
-        ✦ Minimalist status bar with live clock
-        ✦ Alt toggle (giữ từ v3)
-        ✦ 6 themes (thêm Gray)
-        ✦ Fix string color trong Notify
 ]]
 
 local Players = game:GetService("Players")
@@ -24,7 +13,7 @@ local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 
 -- ════════════════════════════════════════════════════════════════
---  THEMES (refined, softer)
+--  THEMES
 -- ════════════════════════════════════════════════════════════════
 local Themes = {
     Dark = {
@@ -186,7 +175,7 @@ local function tween(obj, time, props, style, dir)
 end
 
 -- ════════════════════════════════════════════════════════════════
---  TOP BANNER NOTIFICATION (new in v4)
+--  TOP BANNER
 -- ════════════════════════════════════════════════════════════════
 local TopBanner = {Holder = nil, Active = nil}
 
@@ -212,7 +201,6 @@ local function topBanner(title, text, color, duration, icon)
     duration = duration or 3
     icon = icon or "◆"
 
-    -- Dismiss previous
     if TopBanner.Active and TopBanner.Active.Parent then
         TopBanner.Active:Destroy()
     end
@@ -227,14 +215,12 @@ local function topBanner(title, text, color, duration, icon)
     corner(banner, 14)
     stroke(banner, t.Border, 1, 0.3)
 
-    -- Accent left strip
     local strip = create("Frame", {
         Size = UDim2.new(0, 5, 1, -16), Position = UDim2.new(0, 8, 0, 8),
         BackgroundColor3 = color, BorderSizePixel = 0,
     }, banner)
     pillCorner(strip)
 
-    -- Icon
     local iconBg = create("Frame", {
         Size = UDim2.new(0, 34, 0, 34), Position = UDim2.new(0, 24, 0, 13),
         BackgroundColor3 = color, BackgroundTransparency = 0.82,
@@ -247,7 +233,6 @@ local function topBanner(title, text, color, duration, icon)
         Font = Enum.Font.GothamBold,
     }, iconBg)
 
-    -- Title
     create("TextLabel", {
         Size = UDim2.new(1, -160, 0, 18), Position = UDim2.new(0, 70, 0, 12),
         BackgroundTransparency = 1, Text = title, TextColor3 = t.Text,
@@ -255,7 +240,6 @@ local function topBanner(title, text, color, duration, icon)
         TextXAlignment = Enum.TextXAlignment.Left,
     }, banner)
 
-    -- Body
     create("TextLabel", {
         Size = UDim2.new(1, -160, 0, 18), Position = UDim2.new(0, 70, 0, 30),
         BackgroundTransparency = 1, Text = text, TextColor3 = t.TextDim,
@@ -264,15 +248,13 @@ local function topBanner(title, text, color, duration, icon)
         TextTruncate = Enum.TextTruncate.AtEnd,
     }, banner)
 
-    -- Timer countdown
     local timerLabel = create("TextLabel", {
         Size = UDim2.new(0, 60, 0, 20), Position = UDim2.new(1, -76, 0, 10),
-        BackgroundTransparency = 1, Text = tostring(duration) .. "s",
+        BackgroundTransparency = 1, Text = string.format("%.1fs", duration),
         TextColor3 = color, TextSize = 12, Font = Enum.Font.GothamBold,
         TextXAlignment = Enum.TextXAlignment.Right,
     }, banner)
 
-    -- Progress bar
     local progressBg = create("Frame", {
         Size = UDim2.new(1, -32, 0, 3), Position = UDim2.new(0, 16, 1, -12),
         BackgroundColor3 = t.SurfaceAlt, BorderSizePixel = 0,
@@ -286,15 +268,12 @@ local function topBanner(title, text, color, duration, icon)
     }, progressBg)
     pillCorner(progress)
 
-    -- Slide in from top
     tween(TopBanner.Holder, 0.4, {
         Position = UDim2.new(0.5, -250, 0, 16),
     }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
-    -- Progress animation
     tween(progress, duration, {Size = UDim2.new(0, 0, 1, 0)}, Enum.EasingStyle.Linear)
 
-    -- Countdown timer
     TopBanner.Active = banner
     task.spawn(function()
         local startTime = tick()
@@ -306,10 +285,8 @@ local function topBanner(title, text, color, duration, icon)
         end
     end)
 
-    -- Slide out
     task.delay(duration, function()
         if not banner.Parent then return end
-        -- Only fade if this is still the active banner
         if TopBanner.Active ~= banner then return end
         tween(banner, 0.35, {BackgroundTransparency = 1}, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
         for _, c in ipairs(banner:GetDescendants()) do
@@ -329,7 +306,7 @@ local function topBanner(title, text, color, duration, icon)
 end
 
 -- ════════════════════════════════════════════════════════════════
---  TOAST NOTIFICATIONS (side)
+--  TOAST NOTIFICATIONS
 -- ════════════════════════════════════════════════════════════════
 local Notifications = {Holder = nil}
 
@@ -418,7 +395,7 @@ end
 local Lib = {}
 Lib.__index = Lib
 Lib.Notify = notify
-Lib.Banner = topBanner  -- export top banner
+Lib.Banner = topBanner
 
 function Lib:CreateWindow(config)
     config = config or {}
@@ -454,7 +431,6 @@ function Lib:CreateWindow(config)
     corner(self.Main, 16)
     self.MainStroke = stroke(self.Main, t.Border, 1.2, 0.3)
 
-    -- Soft shadow
     create("ImageLabel", {
         Size = UDim2.new(1, 80, 1, 80), Position = UDim2.new(0, -40, 0, -40),
         BackgroundTransparency = 1, Image = "rbxassetid://1316045217",
@@ -468,21 +444,19 @@ function Lib:CreateWindow(config)
         Position = UDim2.new(0.5, -winSize.X.Offset/2, 0.5, -winSize.Y.Offset/2),
     }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
-    -- ═══ Title bar (minimal) ═══
+    -- Title bar
     self.TitleBar = create("Frame", {
         Size = UDim2.new(1, 0, 0, 50),
         BackgroundColor3 = t.Surface, BorderSizePixel = 0,
     }, self.Main)
     corner(self.TitleBar, 16)
 
-    -- Subtle bottom line
     create("Frame", {
         Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 1, -1),
         BackgroundColor3 = t.Border, BorderSizePixel = 0,
         BackgroundTransparency = 0.5,
     }, self.TitleBar)
 
-    -- Icon dot
     local iconDot = create("Frame", {
         Size = UDim2.new(0, 8, 0, 8), Position = UDim2.new(0, 20, 0, 21),
         BackgroundColor3 = t.Accent, BorderSizePixel = 0,
@@ -503,7 +477,6 @@ function Lib:CreateWindow(config)
         TextXAlignment = Enum.TextXAlignment.Left,
     }, self.TitleBar)
 
-    -- Window controls (minimal icons)
     local function makeCtrl(text, xOff, hoverColor)
         local b = create("TextButton", {
             Size = UDim2.new(0, 28, 0, 28), Position = UDim2.new(1, xOff, 0, 11),
@@ -527,16 +500,15 @@ function Lib:CreateWindow(config)
     self.CloseBtn.MouseButton1Click:Connect(function() self:Hide() end)
     self.MinBtn.MouseButton1Click:Connect(function() self:ToggleMinimize() end)
 
-    -- Version label
     create("TextLabel", {
         Size = UDim2.new(0, 100, 0, 14), Position = UDim2.new(1, -190, 0, 18),
-        BackgroundTransparency = 1, Text = "v4",
+        BackgroundTransparency = 1, Text = "v4.1",
         TextColor3 = t.TextDim, TextSize = 10,
         Font = Enum.Font.Gotham, TextXAlignment = Enum.TextXAlignment.Right,
         TextTransparency = 0.5,
     }, self.TitleBar)
 
-    -- ═══ Sidebar (right) ═══
+    -- Sidebar
     local SIDEBAR_W = 150
     self.Sidebar = create("Frame", {
         Name = "Sidebar",
@@ -554,9 +526,8 @@ function Lib:CreateWindow(config)
         Font = Enum.Font.GothamBold, TextXAlignment = Enum.TextXAlignment.Left,
     }, self.Sidebar)
     sbHeader.LayoutOrder = 0
-    padding(sbHeader, 0, 0, 0, 6)
 
-    -- ═══ Content ═══
+    -- Content
     self.Content = create("Frame", {
         Name = "Content",
         Size = UDim2.new(1, -SIDEBAR_W - 24, 1, -82),
@@ -564,7 +535,7 @@ function Lib:CreateWindow(config)
         BackgroundTransparency = 1, ClipsDescendants = true,
     }, self.Main)
 
-    -- ═══ Status bar ═══
+    -- Status bar
     self.StatusBar = create("Frame", {
         Size = UDim2.new(1, -SIDEBAR_W - 24, 0, 24),
         Position = UDim2.new(0, 10, 1, -30),
@@ -573,11 +544,12 @@ function Lib:CreateWindow(config)
     }, self.Main)
     corner(self.StatusBar, 8)
 
-    -- Live status dot
-    create("Frame", {
+    -- FIXED status dot
+    local statusDot = create("Frame", {
         Size = UDim2.new(0, 6, 0, 6), Position = UDim2.new(0, 12, 0.5, -3),
         BackgroundColor3 = t.Success, BorderSizePixel = 0,
-    }, self.StatusBar):AddChild(corner(_, 3))
+    }, self.StatusBar)
+    pillCorner(statusDot)
 
     self.StatusLabel = create("TextLabel", {
         Size = UDim2.new(1, -30, 1, 0), Position = UDim2.new(0, 26, 0, 0),
@@ -587,7 +559,6 @@ function Lib:CreateWindow(config)
         TextXAlignment = Enum.TextXAlignment.Left,
     }, self.StatusBar)
 
-    -- Live clock on right
     self.ClockLabel = create("TextLabel", {
         Size = UDim2.new(0, 60, 1, 0), Position = UDim2.new(1, -68, 0, 0),
         BackgroundTransparency = 1, Text = "",
@@ -595,7 +566,6 @@ function Lib:CreateWindow(config)
         TextXAlignment = Enum.TextXAlignment.Right,
     }, self.StatusBar)
 
-    -- Clock update
     task.spawn(function()
         while self.Gui and self.Gui.Parent do
             local ok = pcall(function()
@@ -606,7 +576,7 @@ function Lib:CreateWindow(config)
         end
     end)
 
-    -- ═══ Dragging ═══
+    -- Drag
     local dragging, dragStart, startPos
     local function startDrag(input)
         dragging = true
@@ -633,7 +603,6 @@ function Lib:CreateWindow(config)
             or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
     end)
 
-    -- Alt toggle
     UserInputService.InputBegan:Connect(function(input, gpe)
         if gpe then return end
         if input.KeyCode == Enum.KeyCode.LeftAlt or input.KeyCode == Enum.KeyCode.RightAlt then
@@ -641,7 +610,7 @@ function Lib:CreateWindow(config)
         end
     end)
 
-    -- ═══ Methods ═══
+    -- Methods
     function self:SetStatus(text)
         self.StatusLabel.Text = text
     end
@@ -713,7 +682,7 @@ function Lib:CreateWindow(config)
 end
 
 -- ════════════════════════════════════════════════════════════════
---  TAB (sidebar vertical, refined)
+--  TAB
 -- ════════════════════════════════════════════════════════════════
 function Lib:CreateTab(name, icon)
     local t = self.Theme
@@ -790,7 +759,6 @@ function Lib:CreateTab(name, icon)
         return elem
     end
 
-    -- Section
     function tab:CreateSection(title)
         local t2 = Themes[CurrentTheme]
         local frame = create("Frame", {Size = UDim2.new(1, -8, 0, 28), BackgroundTransparency = 1})
@@ -810,7 +778,6 @@ function Lib:CreateTab(name, icon)
         return frame
     end
 
-    -- Label
     function tab:CreateLabel(text)
         local t2 = Themes[CurrentTheme]
         local frame = create("Frame", {Size = UDim2.new(1, -8, 0, 22), BackgroundTransparency = 1})
@@ -828,7 +795,6 @@ function Lib:CreateTab(name, icon)
         return api
     end
 
-    -- Paragraph
     function tab:CreateParagraph(config)
         local t2 = Themes[CurrentTheme]
         local frame = create("Frame", {
@@ -863,7 +829,6 @@ function Lib:CreateTab(name, icon)
         return api
     end
 
-    -- Button
     function tab:CreateButton(config)
         local t2 = Themes[CurrentTheme]
         local frame = create("TextButton", {
@@ -907,7 +872,6 @@ function Lib:CreateTab(name, icon)
         return api
     end
 
-    -- Toggle
     function tab:CreateToggle(config)
         local t2 = Themes[CurrentTheme]
         local frame = create("Frame", {
@@ -970,7 +934,6 @@ function Lib:CreateTab(name, icon)
         return api
     end
 
-    -- Slider
     function tab:CreateSlider(config)
         local t2 = Themes[CurrentTheme]
         local min = config.Min or 0
@@ -1058,7 +1021,6 @@ function Lib:CreateTab(name, icon)
         return api
     end
 
-    -- Dropdown
     function tab:CreateDropdown(config)
         local t2 = Themes[CurrentTheme]
         local options = config.Options or {}
@@ -1165,7 +1127,6 @@ function Lib:CreateTab(name, icon)
         return api
     end
 
-    -- Textbox
     function tab:CreateTextbox(config)
         local t2 = Themes[CurrentTheme]
         local frame = create("Frame", {
@@ -1207,7 +1168,6 @@ function Lib:CreateTab(name, icon)
         return api
     end
 
-    -- Keybind
     function tab:CreateKeybind(config)
         local t2 = Themes[CurrentTheme]
         local frame = create("Frame", {
@@ -1253,7 +1213,6 @@ function Lib:CreateTab(name, icon)
         return api
     end
 
-    -- Color Picker
     function tab:CreateColorPicker(config)
         local t2 = Themes[CurrentTheme]
         local frame = create("Frame", {
@@ -1317,7 +1276,7 @@ end
 -- ════════════════════════════════════════════════════════════════
 --  BOOT
 -- ════════════════════════════════════════════════════════════════
-topBanner("DoeakHub UI v4", "Library loaded — Alt để ẩn/hiện UI", Color3.fromRGB(120, 195, 140), 3, "★")
-print("[DoeakUI v4] Loaded — Alt to toggle UI")
+topBanner("DoeakHub UI v4.1", "Loaded — Alt để ẩn/hiện UI", Color3.fromRGB(120, 195, 140), 3, "★")
+print("[DoeakUI v4.1] Loaded — Alt to toggle UI")
 
 return Lib
